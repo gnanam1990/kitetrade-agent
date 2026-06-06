@@ -1,0 +1,19 @@
+{
+  "name": "kitetrade-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Controlled portfolio, trading, and rebalancing agent with strict guardrails for Kite.",
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @kitetrade-agent/api --filter @kitetrade-agent/web dev",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
