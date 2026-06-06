@@ -8,6 +8,12 @@ This repository is built from the staged OpenCode prompt pack in `prompts/`.
 
 Design controlled trading and rebalancing strategies with portfolio tracking and strict guardrails.
 
+## Proof of Work
+
+- Live Vercel deployment: https://kitetrade-agent.vercel.app
+- Public proof report: [docs/PROOF_OF_WORK.md](docs/PROOF_OF_WORK.md)
+- Rendered screenshot: [docs/screenshot.jpg](docs/screenshot.jpg)
+
 ## Core modules
 
 - **Strategy Builder** — Create rule-based trading and rebalancing strategies.
