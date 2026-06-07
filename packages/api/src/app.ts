@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { assertEvmAddress } from "@kitetrade-agent/core";
+import { PreviewRuntime } from "@kitetrade-agent/worker";
+import { getChainStats } from "./chain.js";
 import { activity, approvals, createItem, items, modules } from "./data.js";
 
 export const app = new Hono();
@@ -63,10 +65,42 @@ app.post("/webhooks/:triggerId", async (c) => {
   });
 });
 
-app.get("/portfolio", (c) => c.json({ route: "/portfolio", product: "KiteTradeAgent", preview: true, modules }));
-app.get("/strategies/new", (c) => c.json({ route: "/strategies/new", product: "KiteTradeAgent", preview: true, modules }));
-app.get("/routes", (c) => c.json({ route: "/routes", product: "KiteTradeAgent", preview: true, modules }));
-app.get("/risk", (c) => c.json({ route: "/risk", product: "KiteTradeAgent", preview: true, modules }));
-app.get("/approvals", (c) => c.json({ route: "/approvals", product: "KiteTradeAgent", preview: true, modules }));
-app.get("/executions", (c) => c.json({ route: "/executions", product: "KiteTradeAgent", preview: true, modules }));
-app.get("/settings", (c) => c.json({ route: "/settings", product: "KiteTradeAgent", preview: true, modules }));
+// Single product/route metadata endpoint. Replaces the previous per-route stubs,
+// which double-registered routes (dead, shadowed code) and registered an entity
+// "/new" route after "/:id" so it was never reachable.
+app.get("/meta", (c) =>
+  c.json({
+    service: "kitetrade-agent",
+    product: "KiteTradeAgent",
+    modules,
+    preview: true,
+  }),
+);
+
+// Real Kite Mainnet read via the connectors package. Degrades to a preview-safe
+// payload (HTTP 200) if chain infrastructure is unreachable, so clients never break.
+app.get("/chain/stats", async (c) => {
+  try {
+    return c.json(await getChainStats());
+  } catch (error) {
+    return c.json({
+      network: "mainnet",
+      chainId: 2366,
+      live: false,
+      preview: true,
+      error: error instanceof Error ? error.message : "chain read failed",
+    });
+  }
+});
+
+// Worker-backed preview run simulation. Exercises the worker runtime.
+app.post("/runs/simulate", (c) => {
+  const item = items[0];
+  if (!item) return c.json({ error: "No items to simulate" }, 404);
+  const runtime = new PreviewRuntime();
+  runtime.enqueue({ item, message: `${item.name} preview run simulated` });
+  return c.json({ event: runtime.tick(), preview: true }, 201);
+});
+
+app.notFound((c) => c.json({ error: "Not found" }, 404));
+app.onError((error, c) => c.json({ error: error instanceof Error ? error.message : "Internal error" }, 500));
